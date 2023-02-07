@@ -10,8 +10,6 @@ import {
     NumberField,
     Sheet,
     TextField,
-    SpaceConfig,
-    Workbook,
     Message,
     OptionField,
     ComputedField
@@ -21,7 +19,7 @@ import {SmartDateField} from '../../examples/fields/SmartDateField'
 import {countries} from './countries'
 
 // This is the key of the sheet
-const master_address_sheet = new Sheet(
+export const master_address_sheet = new Sheet(
     // This is the label of the sheet that will be visible in your Flatfile dashboard
     'Master Address',
     {
@@ -89,22 +87,22 @@ const master_address_sheet = new Sheet(
             }),
 
         // can't have a year in the future; smart date field allows any formatted date to be parsed into a yyyy format
-        yearBuilt: SmartDateField({
-            formatString: "yyyy",
-            validate: (yearBuilt:Date) => {
-             const currYear = new Date()
-             if (currYear.getFullYear() < yearBuilt.getFullYear()) {
-                return [
-                    new Message(
-                        `${yearBuilt} is listed as being built in the future`,
-                        'error',
-                        'validate'
-                    )
-                ]
-             }
-            }
+        // yearBuilt: SmartDateField({
+        //     formatString: "yyyy",
+        //     validate: (yearBuilt:Date) => {
+        //      const currYear = new Date()
+        //      if (currYear.getFullYear() < yearBuilt.getFullYear()) {
+        //         return [
+        //             new Message(
+        //                 `${yearBuilt} is listed as being built in the future`,
+        //                 'error',
+        //                 'validate'
+        //             )
+        //         ]
+        //      }
+        //     }
 
-        }),
+        // }),
 
         mbl: TextField({
             label: "Mbl",
@@ -238,17 +236,3 @@ const master_address_sheet = new Sheet(
     }
 }
 )
-
-export default new SpaceConfig({
-    // This name will display under "Config" when creating a new Space. ID value of deployed "SpaceConfig" seen in the terminal will be the same as shown in the UI.
-    name: "Master Address",
-    workbookConfigs: {
-        "master_address_workbook": new Workbook({
-            // This name will display on the left panel once you create and then open a relevant space in the UI.
-            name: "Master Address",
-            sheets: {
-                master_address_sheet
-            },
-        })
-    }
-})
