@@ -11,8 +11,14 @@ import {
     Sheet,
     TextField,
     SpaceConfig,
-    Workbook
+    Workbook,
+    Message,
+    OptionField,
+    ComputedField
 } from '@flatfile/configure'
+
+import {SmartDateField} from '../../examples/fields/SmartDateField'
+import {countries} from './countries'
 
 // This is the key of the sheet
 const master_address_sheet = new Sheet(
@@ -22,53 +28,82 @@ const master_address_sheet = new Sheet(
         // This is the key of the field
         streetNo: NumberField({
             // This is the label of the field that will be visible to a user importing a file.
-            label: "Street number",
+            label: "Location Street number",
             // This specifies that the field is required.
             required: true
         }),
 
         streetName: TextField({
-            label: "Street name",
+            label: "Location Street name",
+            description: "Location street name with or without suffix (any suffix will be automatically appended)",
             required: true
         }),
 
+        streetSuffix:  TextField({
+            label: "Location Street suffix"
+        }),
+
         unit: NumberField({
-            label: "Unit"
+            label: "Location Unit"
         }),
 
         city: TextField({
-            label: "City",
+            label: "Location City",
             required: true
         }),
 
         state: TextField({
-            label: "State",
+            label: "Location State",
             required: true
         }),
 
         postalCode: NumberField({
-            label: "Postal code",
+            label: "Location Postal code",
             required: true
         }),
 
-        country: TextField({
-            label: "Country"
+        country: OptionField({
+            label: "Location Country",
+            options: countries
         }),
 
         gisID: TextField({
             label: "Gis ID"
         }),
 
-        latitude: TextField({
-            label: "Latitude"
-        }),
+        // can use these to compute internal-only fields that you do not expect mapping against
+        latitude: ComputedField(
+            NumberField({
+                label: "Latitude"}),
+                {dependsOn: [],
+                compute: ({}) => {},
+                destination: "latitude"
+            }),
+        
+        longitude: ComputedField(
+            NumberField({
+                label: "Longitude"}),
+                {dependsOn: [],
+                compute: ({}) => {},
+                destination: "longitude"
+            }),
 
-        longitude: TextField({
-            label: "Longtitude"
-        }),
+        // can't have a year in the future; smart date field allows any formatted date to be parsed into a yyyy format
+        yearBuilt: SmartDateField({
+            formatString: "yyyy",
+            validate: (yearBuilt:Date) => {
+             const currYear = new Date()
+             if (currYear.getFullYear() < yearBuilt.getFullYear()) {
+                return [
+                    new Message(
+                        `${yearBuilt} is listed as being built in the future`,
+                        'error',
+                        'validate'
+                    )
+                ]
+             }
+            }
 
-        yearBuilt: NumberField({
-            label: "Year built"
         }),
 
         mbl: TextField({
@@ -96,20 +131,30 @@ const master_address_sheet = new Sheet(
             label: "Water"
         }),
 
-        sewage: TextField({
-            label: "Sewage"
+        sewage: OptionField({
+            label: "Sewage",
+            options:{
+                1:{label:"septic"},
+                2:{label:"central"},
+                3:{label:"local"},
+                4:{label:"oneschema"}
+            }
         }),
 
         ownerName: TextField({
             label: "Owner name"
         }),
 
-        ownerStreetNo: TextField({
-            label: "Owner street number"
+        ownerStreetAddress: TextField({
+            label: "Owner street name or street address"
         }),
 
-        ownerStreetName: TextField({
-            label: "Owner street name"
+        ownerStreetSuffix: TextField({
+            label: "Owner street suffix"
+        }),
+
+        ownerStreetNo: TextField({
+            label: "Owner street number"
         }),
 
         ownerUnit: TextField({
@@ -128,8 +173,9 @@ const master_address_sheet = new Sheet(
             label: "Owner postal code"
         }),
 
-        ownerCountry: TextField({
-            label: "Owner country"
+        ownerCountry: OptionField({
+            label: "Owner country",
+            options: countries
         }),
 
         ownerPhoneNo: TextField({
@@ -140,17 +186,28 @@ const master_address_sheet = new Sheet(
             label: "Owner email"
         }),
 
-        occupancyType: NumberField({
-            label: "Occupancy type"
+        occupancyType: OptionField({
+            label: "Occupancy type",
+            options: {
+                1:{label:"Option 1"},
+                2:{label:"Option 2"}
+            }
         }),
 
-        buildingType: TextField({
-            label: "Building type"
+        buildingType: OptionField({
+            label: "Building type",
+            options: {
+                1:{label:"Option 1"},
+                2:{label:"Option 2"}
+            }
         }),
 
-        lastUpdatedDate: TextField({
+        lastUpdatedDate: SmartDateField({
             label: "Last updated date"
         }),
+
+        // what is print_key -> is it an identifier that can be mapped to any of several
+        //  "primary keys"?
 
         matID: TextField({
             label: "Mat ID",
@@ -165,7 +222,21 @@ const master_address_sheet = new Sheet(
             label: "Notes"
         })
 
+    },
+    {
+      recordCompute: (record) => {
+        //trim all address fields: ownerStreetNo, ownerStreetAddress, ownerStreetSuffix, ownerUnit, streetSuffix, streetName
+        //if ownerStreetNo is not null then ownerStreetNo + ' ' + ownerStreetAddress
+        //if ownerStreetSuffix is not null then ownerStreetAddress + ' ' + ownerStreetSuffix
+        //if ownerUnit is not null then ownerStreetAddress + ', Unit:' + ownerUnit
+        //if streetSuffix is not null then streetName + ' ' + streetSuffix
+
+        //address parsing validation for location and owner addresses
+        // validate that the zip is a valid zip
+        // fill in missing values where they exist
+
     }
+}
 )
 
 export default new SpaceConfig({
