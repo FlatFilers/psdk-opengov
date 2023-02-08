@@ -12,11 +12,15 @@ import {
     TextField,
     Message,
     OptionField,
-    ComputedField
+    ComputedField,
+    DateField
 } from '@flatfile/configure'
 
 import {SmartDateField} from '../../examples/fields/SmartDateField'
 import { countries } from './countries'
+const isFuture = require('date-fns/isFuture')
+
+
 
 // This is the key of the sheet
 export const master_address_sheet = new Sheet(
@@ -81,7 +85,7 @@ export const master_address_sheet = new Sheet(
                 label: "Latitude"}),
                 {dependsOn: [],
                 compute: ({}) => {},
-                destination: "latitude"
+                    destination: "latitude",
             }),
         
         longitude: ComputedField(
@@ -92,23 +96,20 @@ export const master_address_sheet = new Sheet(
                 destination: "longitude"
             }),
 
-        // can't have a year in the future; smart date field allows any formatted date to be parsed into a yyyy format
-        // yearBuilt: SmartDateField({
-        //     formatString: "yyyy",
-        //     validate: (yearBuilt:Date) => {
-        //      const currYear = new Date()
-        //      if (currYear.getFullYear() < yearBuilt.getFullYear()) {
-        //         return [
-        //             new Message(
-        //                 `${yearBuilt} is listed as being built in the future`,
-        //                 'error',
-        //                 'validate'
-        //             )
-        //         ]
-        //      }
-        //     }
-
-        // }),
+        yearBuilt: DateField({
+            label: "Year built",
+            validate: (v) => {
+                if (isFuture(new Date(v)) === true) {
+                    return [
+                        new Message(
+                            "Date cannot be in the future, please audit",
+                            'error',
+                            'validate'
+                        ),
+                    ]
+                }
+            }
+        }),
 
         mbl: TextField({
             label: "Mbl",
@@ -235,7 +236,10 @@ export const master_address_sheet = new Sheet(
         }),
 
         notes: NumberField({
-            label: "Notes"
+            label: "Notes",
+            stageVisibility: {
+                mapping: false
+            }
         })
 
     },
