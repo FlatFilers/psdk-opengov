@@ -16,7 +16,7 @@ import {
 } from '@flatfile/configure'
 
 import {SmartDateField} from '../../examples/fields/SmartDateField'
-import {countries} from './countries'
+import { countries } from './countries'
 
 // This is the key of the sheet
 export const master_address_sheet = new Sheet(
@@ -34,11 +34,17 @@ export const master_address_sheet = new Sheet(
         streetName: TextField({
             label: "Location Street name",
             description: "Location street name with or without suffix (any suffix will be automatically appended)",
-            required: true
+            required: true,
+            compute: (v: string) => {
+                return v.trim()
+            }
         }),
 
         streetSuffix:  TextField({
-            label: "Location Street suffix"
+            label: "Location Street suffix",
+            compute: (v: string) => {
+                return v.trim()
+            }
         }),
 
         unit: NumberField({
@@ -144,19 +150,31 @@ export const master_address_sheet = new Sheet(
         }),
 
         ownerStreetAddress: TextField({
-            label: "Owner street name or street address"
+            label: "Owner street name or street address",
+            compute: (v: string) => {
+                return v.trim()
+            }
         }),
 
         ownerStreetSuffix: TextField({
-            label: "Owner street suffix"
+            label: "Owner street suffix",
+            compute: (v: string) => {
+                return v.trim()
+            }
         }),
 
         ownerStreetNo: TextField({
-            label: "Owner street number"
+            label: "Owner street number",
+            compute: (v: string) => {
+                return v.trim()
+            }
         }),
 
         ownerUnit: TextField({
-            label: "Owner unit"
+            label: "Owner unit",
+            compute: (v: string) => {
+                return v.trim()
+            }
         }),
 
         ownerCity: TextField({
@@ -222,12 +240,43 @@ export const master_address_sheet = new Sheet(
 
     },
     {
-      recordCompute: (record) => {
-        //trim all address fields: ownerStreetNo, ownerStreetAddress, ownerStreetSuffix, ownerUnit, streetSuffix, streetName
-        //if ownerStreetNo is not null then ownerStreetNo + ' ' + ownerStreetAddress
-        //if ownerStreetSuffix is not null then ownerStreetAddress + ' ' + ownerStreetSuffix
-        //if ownerUnit is not null then ownerStreetAddress + ', Unit:' + ownerUnit
-        //if streetSuffix is not null then streetName + ' ' + streetSuffix
+        recordCompute: (record) => {
+            // This checks to see if a string starts with a number. That way, the first if statement below executes properly. 
+            const number_start = (v) => {
+                return v.match(/^[0-9]/)
+            }
+            // second condition ensures that if street number is already a part of the address, then value from ownerStreetNo won't populate at the beginning and cause dupe ownerStreetNo
+            if (record.get('ownerStreetNo') !== null && !number_start(record.get('ownerStreetAddress'))) {
+                const ownerStreetAddress = record.get('ownerStreetNo') + ' ' + record.get('ownerStreetAddress')
+                record.set('ownerStreetAddress', ownerStreetAddress)
+            }
+
+            // This checks to see if specific values are part of the strings. 
+            const suffix_in_address = (v) => {
+                return v.match(/^.+(Blvd|Ave|Cir|Cres|Crst|Ct|Dr|Ext|Gin|Hl|Hts|Hwy|Ln|Loop|Park|Pkwy|Pl|Pt|Rd|Run|St|Ter|Trl|Way)+.*/)
+            }
+            // second condition specifies that if ownerStreetAddress already contains a suffix, then don't concatenate ownerStreetSuffix to avoid dupe suffixes.
+            if (record.get('ownerStreetSuffix') !== null && !suffix_in_address(record.get('ownerStreetAddress'))) {
+                const ownerStreetAddress = record.get('ownerStreetAddress') + ' ' + record.get('ownerStreetSuffix')
+                record.set('ownerStreetAddress', ownerStreetAddress)
+            }
+
+            // This checks to see if an address already contains unit number. That way, the first if statement below executes correctly.
+            const unit_in_address = (v) => {
+                return v.match(/^.+(Rm|RM|Ste)+\s+[0-9]{1,4}.*/)
+            }
+            // if ownerUnit is not null then ownerStreetAddress + ', Unit:' + ownerUnit
+            // second condition specifies that if there is already unit information inside ownerStreetAddress, then don't also populate with existing info from ownerUnit
+            if (record.get('ownerUnit') !== null && !unit_in_address(record.get('ownerStreetAddress'))) {
+                const ownerStreetAddress = record.get('ownerStreetAddress') + ' Unit: ' + record.get('ownerUnit')
+                record.set('ownerStreetAddress', ownerStreetAddress)
+            }
+
+            // second condition specifies that if streetName already contains a suffix, then don't concatenate streetSuffix to avoid dupe suffixes.
+            if (record.get('streetSuffix') !== null && !suffix_in_address(record.get('streetName'))) {
+                const streetName = record.get('streetName') + ' ' + record.get('streetSuffix')
+                record.set('streetName', streetName)
+            }
 
         //address parsing validation for location and owner addresses
         // validate that the zip is a valid zip
