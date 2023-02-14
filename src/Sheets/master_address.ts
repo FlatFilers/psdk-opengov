@@ -282,6 +282,13 @@ export const master_address_sheet = new Sheet(
                 record.set('streetName', streetName)
             }
 
+            // if mbl is null and there is a value in gisID, populate mbl with that gisID value
+            const gisId = record.get('gisID')
+            const mbl = record.get('mbl')
+            if (gisId !== null && mbl === null) {
+                record.set('mbl', gisId)
+            }
+
         //address parsing validation for location and owner addresses
         // validate that the zip is a valid zip
         // fill in missing values where they exist
